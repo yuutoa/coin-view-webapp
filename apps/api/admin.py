@@ -1,3 +1,5 @@
 from django.contrib import admin
+from apps.api.models import CryptoCurrency, ConversionHistory
 
-# Register your models here.
+admin.site.register(CryptoCurrency)
+admin.site.register(ConversionHistory)
