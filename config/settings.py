@@ -11,20 +11,18 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 import os
 import environ
-from datetime import timedelta
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # Initialize environment variables
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# Project Settings
+# -----------------
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
@@ -34,8 +32,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
-# Application definition
+# Application Definition
+# ----------------------
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -44,12 +42,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django.contrib.sites',
 
-        # Third-party
+    # Third-party
     'rest_framework',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     'corsheaders',
     'rest_framework_simplejwt',
-    'django.contrib.sites',
+
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -71,11 +73,17 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
+# URL Configuration
+# -----------------
+
 ROOT_URLCONF = "config.urls"
+
+# Template Configuration
+# ----------------------
 
 TEMPLATES = [
     {
@@ -95,31 +103,37 @@ TEMPLATES = [
     },
 ]
 
+# WSGI Application
+# -----------------
+
 WSGI_APPLICATION = "config.wsgi.application"
 
+# Database Configuration
+# ----------------------
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+DATABASE_ENGINE = env("DATABASE_ENGINE", default="postgresql")
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DATABASE_NAME'),
-        'USER': env('DATABASE_USER'),
-        'PASSWORD': env('DATABASE_PASSWORD'),
-        'HOST': env('DATABASE_HOST'),
-        'PORT': env('DATABASE_PORT'),
-    },
-    'sqlite_fallback':
-        {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'fallback.sqlite3')
+        'ENGINE': f'django.db.backends.{DATABASE_ENGINE}',
+        'NAME': env("DATABASE_NAME"),
+        'USER': env("DATABASE_USER", default=""),
+        'PASSWORD': env("DATABASE_PASSWORD", default=""),
+        'HOST': env("DATABASE_HOST", default="localhost"),
+        'PORT': env("DATABASE_PORT", default="5432"),
     }
 }
 
+if DATABASE_ENGINE == "sqlite3":
+    DATABASES['default']['NAME'] = os.path.join(BASE_DIR, env("SQLITE_FILENAME", default="fallback.sqlite3"))
+    # Remove other PostgreSQL-specific settings
+    DATABASES['default'].pop('USER', None)
+    DATABASES['default'].pop('PASSWORD', None)
+    DATABASES['default'].pop('HOST', None)
+    DATABASES['default'].pop('PORT', None)
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+# Authentication Configuration
+# ---------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -136,9 +150,84 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Custom User model
+AUTH_USER_MODEL = "users.CustomUser"
+
+# Django AllAuth
+SITE_ID = 1
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_QUERY_EMAIL = True
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+)
+
+# CORS Configuration
+# ------------------
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:9000",
+]
+
+# Django Rest Framework Configuration
+# -----------------------------------
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'USER_DETAILS_SERIALIZER': 'apps.users.serializers.CustomUserSerializer',
+}
+
+# JWT Configuration
+# -----------------
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+}
+
+# Social Auth Configuration
+# -------------------------
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_CLIENT_ID"),
+            "secret": env("GOOGLE_CLIENT_SECRET"),
+        },
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "github": {
+        "APP": {
+            "client_id": env("GITHUB_CLIENT_ID"),
+            "secret": env("GITHUB_CLIENT_SECRET"),
+        },
+    },
+}
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
+# --------------------
 
 LANGUAGE_CODE = "en-us"
 
@@ -148,64 +237,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Static Files
+# -------------
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = "static/"
-
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
+# ------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# Enabling Cross-Origin Resource Sharing (CORS)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:9000",
-]
-
-# Django REST Framework Config
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'SIGNING_KEY': env("SECRET_KEY"),
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-}
-
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
-
-SITE_ID = 1
-
-ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_EMAIL_REQUIRED = True
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': ['email', 'profile'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-    },
-    'github': {
-        'SCOPE': ['user:email'],
-    }
-}
-
-SOCIALACCOUNT_QUERY_EMAIL = True
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-
-

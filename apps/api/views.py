@@ -18,7 +18,7 @@ class CryptoListView(generics.ListAPIView):
 
     queryset = CryptoCurrency.objects.all()
     serializer_class = CryptoCurrencySerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class CryptoDetailView(generics.RetrieveAPIView):
@@ -29,13 +29,15 @@ class CryptoDetailView(generics.RetrieveAPIView):
     queryset = CryptoCurrency.objects.all()
     serializer_class = CryptoCurrencySerializer
     lookup_field = "symbol"
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class CryptoConversionView(views.APIView):
     """
     API to convert an amount from one cryptocurrency to another.
     """
+
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         """
@@ -118,6 +120,9 @@ class APRCalculatorView(views.APIView):
     API to calculate APR (Annual Percentage Rate) using cryptocurrency.
     """
 
+    permission_classes = [permissions.IsAuthenticated]
+
+
     def post(self, request):
         serializer = APRCalculatorSerializer(data=request.data)
         if serializer.is_valid():
@@ -131,6 +136,8 @@ class UpdateCryptoData(views.APIView):
     Fetch cryptocurrency prices from API and update the database.
     Returns a list of updated cryptocurrency symbols.
     """
+
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         updated_symbols = get_crypto_data()
