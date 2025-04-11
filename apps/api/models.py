@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from config.settings import AUTH_USER_MODEL
 
 class CryptoCurrency(models.Model):
     symbol = models.CharField(max_length=10, unique=True)
@@ -16,7 +15,7 @@ class CryptoCurrency(models.Model):
         return f"{self.name} ({self.symbol})"
 
 class ConversionHistory(models.Model):
-    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     from_currency = models.CharField(max_length=10)
     to_currency = models.CharField(max_length=10)
     amount = models.DecimalField(max_digits=20, decimal_places=8)

@@ -1,0 +1,22 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+}
+
+.container {
+    margin: 20px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+}
+
+form input, form button {
+    display: block;
+    margin-bottom: 10px;
+}

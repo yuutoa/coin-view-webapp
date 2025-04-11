@@ -121,9 +121,9 @@ def calculate_apr(crypto_symbol, principal, rate, time_years):
     return {
         "crypto_symbol": crypto_symbol,
         "principal_in_crypto": principal,
-        "principal_in_usd": round(principal_in_usd, 6),
-        "annual_rate_percent": round(rate, 6),
-        "time_years": round(time_years, 6),
-        "total_amount_in_crypto": round(total_amount_in_crypto, 6),
-        "interest_earned_in_crypto": round(interest_earned_in_crypto, 6),
+        "principal_in_usd": round(principal_in_usd, 2),
+        "annual_rate_percent": round(rate, 2),
+        "time_years": round(time_years, 2),
+        "total_amount_in_crypto": round(total_amount_in_crypto, 4),
+        "interest_earned_in_crypto": round(interest_earned_in_crypto, 4),
     }

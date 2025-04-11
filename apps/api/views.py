@@ -9,6 +9,8 @@ from apps.api.serializers import (
 )
 from apps.api.models import CryptoCurrency, ConversionHistory
 from apps.api.services import get_crypto_data
+from django.contrib.auth import logout
+from rest_framework.decorators import api_view
 
 
 class CryptoListView(generics.ListAPIView):
@@ -32,65 +34,59 @@ class CryptoDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
+
 class CryptoConversionView(views.APIView):
     """
-    API to convert an amount from one cryptocurrency to another.
+    API endpoint to convert an amount from one cryptocurrency to another.
+
+    Requires authentication.
     """
 
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        """
-        Example payload:
-        {
-            "from_currency": "BTC",
-            "to_currency": "ETH",
-            "amount": 0.01
-        }
-        """
-        from_currency = request.data.get("from_currency")
-        to_currency = request.data.get("to_currency")
-        amount = request.data.get("amount")
+        from_currency_symbol = request.data.get("from_currency")
+        to_currency_symbol = request.data.get("to_currency")
+        amount_str = request.data.get("amount")
 
-        if not from_currency or not to_currency or not amount:
+        if not from_currency_symbol or not to_currency_symbol or not amount_str:
             return Response(
-                {"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Missing required fields: from_currency, to_currency, and amount."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            from_coin = CryptoCurrency.objects.get(symbol=from_currency.upper())
-            to_coin = CryptoCurrency.objects.get(symbol=to_currency.upper())
+            amount = Decimal(amount_str)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Invalid amount provided. Please provide a numeric value."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            # Calculate conversion
-            converted_amount = (
-                Decimal(amount) * from_coin.price_usd
-            ) / to_coin.price_usd
+        try:
+            from_coin = CryptoCurrency.objects.get(symbol=from_currency_symbol.upper())
+            to_coin = CryptoCurrency.objects.get(symbol=to_currency_symbol.upper())
+
+            # Calculate conversion based on USD prices
             conversion_rate = from_coin.price_usd / to_coin.price_usd
+            converted_amount = amount * conversion_rate
 
-            # Round to 6 decimal places
-            converted_amount = converted_amount.quantize(
-                Decimal("0.000000"), rounding=ROUND_DOWN
-            )
-            conversion_rate = conversion_rate.quantize(
-                Decimal("0.000000"), rounding=ROUND_DOWN
-            )
-
-            # Store in conversion history (if user is authenticated)
+            # Store in conversion history
             if request.user.is_authenticated:
                 ConversionHistory.objects.create(
                     user=request.user,
-                    from_currency=from_currency.upper(),
-                    to_currency=to_currency.upper(),
-                    amount=Decimal(amount),
+                    from_currency=from_currency_symbol.upper(),
+                    to_currency=to_currency_symbol.upper(),
+                    amount=amount,
                     converted_amount=converted_amount,
                     conversion_rate=conversion_rate,
                 )
 
             return Response(
                 {
-                    "from_currency": from_currency.upper(),
-                    "to_currency": to_currency.upper(),
-                    "amount": round(float(amount), 6),
+                    "from_currency": from_currency_symbol.upper(),
+                    "to_currency": to_currency_symbol.upper(),
+                    "amount": float(amount),
                     "converted_amount": float(converted_amount),
                     "conversion_rate": float(conversion_rate),
                 },
@@ -99,7 +95,8 @@ class CryptoConversionView(views.APIView):
 
         except CryptoCurrency.DoesNotExist:
             return Response(
-                {"error": "Invalid currency symbol"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid currency symbol provided. Please ensure the symbols are correct."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -122,7 +119,6 @@ class APRCalculatorView(views.APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
-
     def post(self, request):
         serializer = APRCalculatorSerializer(data=request.data)
         if serializer.is_valid():
@@ -142,3 +138,12 @@ class UpdateCryptoData(views.APIView):
     def get(self, request):
         updated_symbols = get_crypto_data()
         return Response({"updated_cryptos": updated_symbols}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def logout_view(request):
+    logout(request)
+    response = Response({"message": "Logged out"}, status=status.HTTP_200_OK)
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return response
