@@ -67,26 +67,26 @@ Follow the steps below to get CoinView running locally on your machine:
 ### Step 1: Clone the Repository
 
 ```bash
-   git clone https://github.com/yuutoa/coin-view-webapp.git
-   cd coin-view-webapp
+git clone https://github.com/yuutoa/coin-view-webapp.git
+cd coin-view-webapp
 ```
 
 ### Step 2: Create and Activate a Virtual Environment
 
 ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
+python -m venv .venv
+.venv\Scripts\activate
 ```
 
 ### Step 3: Install Dependencies
 
 ```bash
-  pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Step 4: Set Up Environment Variables
 
-Create a .env file in the root directory and add the following variables:
+Create a .env file in the project root:
 
 Required
 ```env 
@@ -95,6 +95,15 @@ SECRET_KEY=your-django-secret-key
 # SQLite (default)
 DATABASE_ENGINE=sqlite3
 DATABASE_NAME=./fallback.sqlite3
+
+# OAuth Setup (for Google & GitHub login):
+# Google: https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# GitHub: https://github.com/settings/developers
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
 ```
 
 Or for PostgreSQL:
@@ -107,20 +116,22 @@ DATABASE_HOST=localhost
 DATABASE_PORT=5432
 ```
 
-OAuth Setup (for Google & GitHub login):
-```env
-# Google: https://console.cloud.google.com/apis/credentials
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# GitHub: https://github.com/settings/developers
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
+### Step 5: Run Database Migrations
+```bash
+python manage.py migrate
 ```
 
-### Step 6: Run Database Migrations
+### Step 6: Populate Cryptocurrency Data
 ```bash
-   python manage.py migrate
+python manage.py populate_crypto
+```
+
+You should see output like:
+```
+Created BTC
+Created ETH
+...
+✅ Crypto data population complete!
 ```
 
 ### Step 7: Run the Development Server
