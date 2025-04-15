@@ -1,22 +1,525 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+/* ==========================================================================
+   1. Global Styles & Variables
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --light-bg: #f9f9f9;
+    --dark-text: #212529;
+    --medium-text: #495057;
+    --border-color: #e9ecef;
+    --box-shadow-light: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.05);
+    --border-radius: 0.25rem;
+    --font-main: 'Inter', sans-serif;
+    --font-accent: 'Poppins', sans-serif;
+    --table-row-hover: #f8f8f8;
+    --table-border-color: #e9ecef;
+    --animation-duration: 0.3s;
+    --animation-timing-function: ease-in-out;
 }
 
-nav ul {
-    list-style: none;
+body {
+    font-family: var(--font-main);
+    background-color: var(--light-bg);
+    margin: 0;
+    padding-top: 64px;
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    min-height: 100vh;
+    color: var(--dark-text);
+    line-height: 1.6;
+    font-size: 1rem;
 }
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--animation-duration) var(--animation-timing-function);
+}
+
+a:hover {
+    color: #0056b3;
+}
+
+/* ==========================================================================
+   2. Buttons
+   ========================================================================== */
+
+.btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-light);
+    transition: all var(--animation-duration) var(--animation-timing-function);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    box-shadow: 0 0.3rem 0.7rem rgba(0, 123, 255, 0.1);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+    border-color: #4e555b;
+    box-shadow: 0 0.3rem 0.7rem rgba(108, 117, 125, 0.1);
+}
+
+.btn-outline-secondary {
+    color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+/* ==========================================================================
+   3. Alerts
+   ========================================================================== */
+
+.alert {
+    border-radius: var(--border-radius);
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow-light);
+}
+
+.alert-info {
+    background-color: #e7f3ff;
+    border-color: #d1e7ff;
+    color: #0c6384;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #842029;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    border-color: #c3e6cb;
+    color: #0f5132;
+}
+
+/* ==========================================================================
+   4. Navbar
+   ========================================================================== */
+
+.navbar {
+    font-size: 1rem;
+    padding: 0.8rem 3rem;
+    background-color: #fff !important;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow-light);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    font-family: var(--font-accent);
+    font-weight: 600;
+    color: #4fa0e0;
+}
+
+.navbar-brand img {
+    filter: brightness(0.95);
+    border-radius: 8px;
+    margin-right: 0.75rem;
+    height: 36px;
+}
+
+.navbar-nav .nav-item {
+    margin-left: 0.5rem;
+}
+
+.navbar-nav .nav-link,
+.navbar-nav .logout-link {
+    color: var(--medium-text) !important;
+    padding: 0.6rem 1rem;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    transition: background-color var(--animation-duration) var(--animation-timing-function);
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .logout-link:hover {
+    color: var(--primary-color) !important;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.logout-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.navbar-text.user-info {
+    font-size: 1rem;
+    color: var(--medium-text);
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+}
+
+/* ==========================================================================
+   5. Container & Cards
+   ========================================================================== */
 
 .container {
-    margin: 20px;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
+    max-width: 1400px;
+    padding: 2.5rem;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
 
-form input, form button {
-    display: block;
-    margin-bottom: 10px;
+.card {
+    background-color: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-light);
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.card-title {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    color: var(--dark-text);
+    font-weight: 600;
+    font-family: var(--font-accent);
+}
+
+/* ==========================================================================
+   6. Tables
+   ========================================================================== */
+
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: var(--medium-text);
+    border-collapse: collapse;
+    box-shadow: var(--box-shadow-light);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.table th,
+.table td {
+    padding: 0.9rem;
+    vertical-align: middle;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--table-border-color);
+}
+
+.table thead th {
+    background-color: #f9f9f9;
+    color: var(--dark-text);
+    font-weight: 500;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover {
+    background-color: var(--table-row-hover);
+}
+
+/* ==========================================================================
+   7. Forms
+   ========================================================================== */
+
+.form-control {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 0.95rem;
+    color: var(--medium-text);
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    transition: all var(--animation-duration) var(--animation-timing-function);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-label {
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+    color: var(--dark-text);
+}
+
+/* Larger form controls */
+.form-control-lg {
+    padding: 0.9rem 1.2rem;
+    font-size: 1.1rem;
+}
+
+/* Larger buttons */
+.btn-lg {
+    padding: 0.8rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   8. Page Headers & Titles
+   ========================================================================== */
+
+.page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--dark-text);
+    margin-bottom: 0;
+}
+
+.compact-header {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.compact-header > div:last-child {
+    text-align: right;
+    flex-grow: 1;
+}
+
+/* ==========================================================================
+   9. Update Button
+   ========================================================================== */
+
+.update-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.update-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 0.3rem 0.7rem rgba(0, 123, 255, 0.1);
+}
+
+/* ==========================================================================
+   10. Detail Page Styles
+   ========================================================================== */
+
+.detail-header {
+    margin-bottom: 1rem;
+}
+
+.description-style {
+    font-size: 1rem;
+    color: var(--medium-text);
+    line-height: 1.7;
+    margin-top: 2rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    background-color: rgba(var(--secondary-color, 108, 117, 125), 0.05);
+    border: 1px solid rgba(var(--secondary-color, 108, 117, 125), 0.1);
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.back-button {
+    position: fixed;
+    top: 100px; /* Adjusted for fixed navbar */
+    left: 30px;
+    color: var(--primary-color);
+    font-size: 1rem;
+    text-decoration: none;
+    z-index: 1000;
+    transition: color var(--animation-duration) var(--animation-timing-function);
+}
+
+.back-button:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.detail-page-content {
+    margin-top: 1rem;
+    padding-top: 20px;
+}
+
+/* ==========================================================================
+   11. Conversion & APR Pages - Layout
+   ========================================================================== */
+
+#conversion-result,
+#apr-result {
+    padding-left: 1rem;
+}
+
+.conversion-form,
+.apr-form {
+    margin-bottom: 0.1rem; /* Space between form and result on smaller screens */
+}
+
+.conversion-result,
+.apr-result {
+    padding-left: 1rem;
+}
+
+/* Animation for form slide */
+.slide-left {
+    transform: translateX(-10%);
+    transition: transform 0.5s ease;
+}
+
+/* Animation for result slide-in */
+.slide-in {
+    opacity: 0;
+    animation: slideInRight 0.5s forwards;
+}
+
+@keyframes slideInRight {
+    0% {
+        opacity: 0;
+        transform: translateX(30%);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.form-title, h2 {
+    font-family: var(--font-accent);
+    font-weight: 600;
+    font-size: 1.75rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    background: linear-gradient(90deg, #007bff 0%, #00c6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================================================
+   12. Responsive Design
+   ========================================================================== */
+
+@media (max-width: 576px) {
+    .animated-form-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+        padding-top: 1rem;
+    }
+
+    .conversion-form,
+    .apr-form,
+    .conversion-result,
+    .apr-result {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .conversion-result,
+    .apr-result {
+        padding-left: 0;
+    }
+
+    .slide-left {
+        transform: none !important;
+    }
+
+    .form-title {
+        font-size: 1.5rem;
+    }
+
+    .form-control-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1.2rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 992px) {
+    .animated-form-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+        padding-top: 1.5rem;
+    }
+
+    .conversion-form,
+    .apr-form,
+    .conversion-result,
+    .apr-result {
+        width: 100%;
+        max-width: 90%;
+    }
+
+    .slide-left {
+        transform: none !important;
+    }
+
+    .form-control-lg {
+        font-size: 1.05rem;
+        padding: 0.8rem 1.1rem;
+    }
+
+    .btn-lg {
+        font-size: 1.05rem;
+        padding: 0.8rem 1.3rem;
+    }
+
+    .form-title {
+        font-size: 1.6rem;
+    }
 }

@@ -14,8 +14,6 @@ export function logout() {
             "X-CSRFToken": getCookie("csrftoken"),
         },
     }).finally(() => {
-        document.cookie = "access_token=; Max-Age=0; path=/";
-        document.cookie = "refresh_token=; Max-Age=0; path=/";
         document.cookie = "csrftoken=; Max-Age=0; path=/";
         localStorage.clear();
         window.location.href = "/";

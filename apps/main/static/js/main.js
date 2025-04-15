@@ -73,42 +73,19 @@ async function router() {
 async function renderCryptoList() {
     app.innerHTML = `<p>Loading crypto list...</p>`;
 
-    const renderTable = (data) => `
-        <table class="table table-bordered table-striped table-hover">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Symbol</th>
-                    <th class="text-end">Price (USD)</th>
-                    <th class="text-end">Market Cap</th>
-                    <th class="text-end">Volume (24h)</th>
-                    <th class="${data.some(c => parseFloat(c.percent_change_24h) < 0) ? 'text-end' : 'text-end'}">Change (24h)</th>
-                    <th class="text-end">Circulating Supply</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${data.map(c => `
-                    <tr>
-                        <td><a href="#/crypto/${c.symbol}">${c.name}</a></td>
-                        <td>${c.symbol.toUpperCase()}</td>
-                        <td class="text-end">${formatPrice(c.price_usd)}</td>
-                        <td class="text-end">${formatHumanReadableNumber(c.market_cap)}</td>
-                        <td class="text-end">${formatHumanReadableNumber(c.volume_24h)}</td>
-                        <td class="text-end ${parseFloat(c.percent_change_24h) < 0 ? 'text-danger' : 'text-success'}">${parseFloat(c.percent_change_24h).toFixed(2)}%</td>
-                        <td class="text-end">${formatHumanReadableNumber(c.circulating_supply)}</td>
-                    </tr>
-                `).join("")}
-            </tbody>
-        </table>`;
-
     const formatPrice = (price) => {
         const numPrice = parseFloat(price);
-        if (Math.abs(numPrice) < 0.01 && Math.abs(numPrice) > 0) {
+
+        if (numPrice >= 1000) {
+            return numPrice.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        } else if (Math.abs(numPrice) >= 0.0001) {
+            return numPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+        } else if (Math.abs(numPrice) > 0) {
             const strPrice = numPrice.toString();
-            const firstFourNonZero = strPrice.match(/0\.0*[1-9]{1,4}/);
-            return firstFourNonZero ? firstFourNonZero[0] : numPrice.toFixed(8);
+            const match = strPrice.match(/^0\.0*([1-9]\d{0,3})/);
+            return match ? `0.${'0'.repeat(match[0].indexOf(match[1][0]) - 2)}${match[1]}` : numPrice.toExponential(2);
         } else {
-            return numPrice.toFixed(4);
+            return "0.00";
         }
     };
 
@@ -121,22 +98,53 @@ async function renderCryptoList() {
         } else if (absNumber >= 1e6) {
             return (number / 1e6).toFixed(2) + 'M';
         } else if (absNumber >= 1e3) {
-            return (number / 1e3).toFixed(2) + 'K';
+            return (number / 1e3).toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'K';
         } else {
             return parseFloat(number).toFixed(2);
         }
     };
 
+    const renderTable = (data) => `
+        <table class="table table-hover" style="width: 100%;">
+            <thead class="thead-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Symbol</th>
+                    <th class="text-end">Price</th>
+                    <th class="text-end">Change (24h)</th>
+                    <th class="text-end">Market Cap</th>
+                    <th class="text-end">Volume (24h)</th>
+                    <th class="text-end">Circulating Supply</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(c => `
+                    <tr>
+                        <td><a href="#/crypto/${c.symbol}">${c.name}</a></td>
+                        <td>${c.symbol.toUpperCase()}</td>
+                        <td class="text-end">$${formatPrice(c.price_usd)}</td>
+                        <td class="text-end ${parseFloat(c.percent_change_24h) < 0 ? 'text-danger' : 'text-success'}">${parseFloat(c.percent_change_24h).toFixed(2)}%</td>
+                        <td class="text-end">${formatHumanReadableNumber(c.market_cap)}</td>
+                        <td class="text-end">${formatHumanReadableNumber(c.volume_24h)}</td>
+                        <td class="text-end">${formatHumanReadableNumber(c.circulating_supply)}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>`;
+
     const renderPage = (data) => {
         const lastUpdated = data.length > 0 ? new Date(data[0].last_updated).toLocaleString() : 'N/A';
 
         app.innerHTML = `
-            <h2>Crypto List</h2>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div><strong>Last Updated:</strong> <span class="text-muted">${lastUpdated}</span></div>
-                <button id="update-data-btn" class="btn btn-outline-secondary btn-sm">🔄 Update</button>
+            <div class="page-header compact-header d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <button id="update-data-btn" class="btn btn-primary btn-sm update-btn">Update Data</button>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted small">Last Updated: ${lastUpdated}</span>
+                </div>
             </div>
-            <div id="update-message" class="my-2 text-center text-muted"></div>
+            <div id="update-message" class="mt-2 text-center text-muted"></div>
             <div class="table-responsive">
                 ${renderTable(data)}
             </div>
@@ -153,12 +161,12 @@ async function renderCryptoList() {
                     const updatedData = await fetchCryptoList();
                     document.querySelector(".table-responsive").innerHTML = renderTable(updatedData);
                     const newLastUpdated = updatedData.length > 0 ? new Date(updatedData[0].last_updated).toLocaleString() : 'N/A';
-                    document.querySelector('.d-flex strong + span').textContent = newLastUpdated;
-                    updateMessage.innerHTML = renderAlert("✅ Updated!", "success");
+                    document.querySelector('.compact-header .text-muted').textContent = `Last Updated: ${newLastUpdated}`;
+                    updateMessage.innerHTML = renderAlert("Updated successfully.", "success");
                     setTimeout(() => updateMessage.textContent = '', 3000);
                 } catch (err) {
                     console.error(err);
-                    updateMessage.innerHTML = renderAlert("⚠️ Update failed.", "danger");
+                    updateMessage.innerHTML = renderAlert("Update failed.", "danger");
                     setTimeout(() => updateMessage.textContent = '', 3000);
                 }
             });
@@ -170,49 +178,79 @@ async function renderCryptoList() {
         renderPage(data);
     } catch (err) {
         console.error(err);
-        app.innerHTML = renderAlert("Failed to fetch crypto list ❌", "danger");
+        app.innerHTML = renderAlert("Failed to fetch crypto list.", "danger");
     }
 }
-
 
 // ==============================
 // CRYPTO DETAIL PAGE
 // ==============================
 async function renderCryptoDetail(symbol) {
-    app.innerHTML = `<p>Loading ${symbol} details...</p>`;
+    app.innerHTML = `<p class="text-center">Loading ${symbol} details...</p>`;
+
+    const formatPrice = (price) => {
+        const numPrice = parseFloat(price);
+        if (numPrice >= 1000) {
+            return numPrice.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        } else if (Math.abs(numPrice) >= 0.0001) {
+            return numPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+        } else if (Math.abs(numPrice) > 0) {
+            const strPrice = numPrice.toString();
+            const match = strPrice.match(/^0\.0*([1-9]\d{0,3})/);
+            return match ? `0.${'0'.repeat(match[0].indexOf(match[1][0]) - 2)}${match[1]}` : numPrice.toExponential(2);
+        } else {
+            return "0.00";
+        }
+    };
+
+    const formatNumber = (num) => {
+        return parseFloat(num).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+        });
+    };
 
     try {
         const data = await fetchCryptoDetail(symbol);
-
-        const description = data.description ? `<p>${data.description}</p>` : `<p>No description available for ${data.name}.</p>`;
+        const lastUpdated = new Date(data.last_updated).toLocaleString();
+const description = data.description
+    ? `<p class="lead description-style text-center">${data.description}</p>`
+    : `<p class="lead description-style text-center mw300">${data.name} is a digital currency that operates without a central bank or single administrator. It utilizes decentralized technology, typically blockchain, to enable secure and transparent peer-to-peer transactions. Aiming to offer an alternative to traditional financial systems.</p>`;
 
         app.innerHTML = `
-            <h2>${data.name} (${data.symbol.toUpperCase()})</h2>
-            <div class="mb-4">${description}</div>
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">${data.name} Details</h5>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <strong>Price:</strong> $${parseFloat(data.price_usd).toFixed(4)}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Market Cap:</strong> $${parseFloat(data.market_cap).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Volume (24h):</strong> $${parseFloat(data.volume_24h).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Change (24h):</strong> ${parseFloat(data.percent_change_24h).toFixed(2)}%
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Circulating Supply:</strong> ${parseFloat(data.circulating_supply).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${data.symbol.toUpperCase()}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Last Updated:</strong> ${new Date(data.last_updated).toLocaleString()}
-                        </li>
-                    </ul>
-                    <a href="#/crypto-list" class="btn btn-secondary mt-3">← Back to List</a>
+            <a href="#/crypto-list" class="back-button">← Back to Cryptocurrencies</a>
+            <div class="detail-page-content">
+                <h2 class="text-center mb-3">${data.name} (${data.symbol.toUpperCase()})</h2>
+                <div class="mb-4">${description}</div>
+                <div class="card mx-auto" style="max-width: 600px;">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">${data.name} Overview</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Price:</strong>
+                                <span>$${formatPrice(data.price_usd)}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Market Cap:</strong>
+                                <span>$${formatNumber(data.market_cap)}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Volume (24h):</strong>
+                                <span>$${formatNumber(data.volume_24h)}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Change (24h):</strong>
+                                <span class="${parseFloat(data.percent_change_24h) < 0 ? 'text-danger' : 'text-success'}">${parseFloat(data.percent_change_24h).toFixed(2)}%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <strong>Circulating Supply:</strong>
+                                <span>${formatNumber(data.circulating_supply)} ${data.symbol.toUpperCase()}</span>
+                            </li>
+                            <li class="list-group-item text-center small text-muted">
+                                Last Updated: ${lastUpdated}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         `;
@@ -223,41 +261,172 @@ async function renderCryptoDetail(symbol) {
 }
 
 // ==============================
-// CONVERT PAGE
+// CONVERSION PAGE
 // ==============================
 function renderConvert() {
     app.innerHTML = `
-        <h2>Convert Crypto</h2>
-        <form id="convert-form">
-            <input type="text" name="from_currency" class="form-control mb-2" placeholder="From (e.g., BTC)" required oninput="this.value = this.value.toUpperCase()" />
-            <input type="text" name="to_currency" class="form-control mb-2" placeholder="To (e.g., ETH)" required oninput="this.value = this.value.toUpperCase()" />
-            <input type="number" name="amount" class="form-control mb-2" placeholder="Amount" step="any" required />
-            <button class="btn btn-primary">Convert</button>
-        </form>
-        <div id="conversion-result" class="mt-3"></div>
+        <div class="container">
+            <div class="d-flex flex-column flex-md-row justify-content-center align-items-start gap-4 animated-form-container">
+                <div class="conversion-form card p-4 shadow w-100" style="max-width: 480px;">
+                    <form id="convert-form">
+                        <h2 class="form-title mb-4 text-center">Crypto Converter</h2>
+                        <div class="mb-3">
+                            <label for="from_currency" class="form-label">From</label>
+                            <input type="text" name="from_currency" class="form-control form-control-lg" placeholder="BTC" required oninput="this.value = this.value.toUpperCase()" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="to_currency" class="form-label">To</label>
+                            <input type="text" name="to_currency" class="form-control form-control-lg" placeholder="ETH" required oninput="this.value = this.value.toUpperCase()" />
+                        </div>
+                        <div class="mb-4">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="number" name="amount" class="form-control form-control-lg" placeholder="Enter amount" step="any" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Convert</button>
+                    </form>
+                </div>
+                <div id="conversion-result" class="conversion-result d-none w-100" style="max-width: 500px;"></div>
+            </div>
+        </div>
     `;
 
-    document.getElementById("convert-form").addEventListener("submit", async (e) => {
+    const form = document.getElementById("convert-form");
+    const resultBox = document.getElementById("conversion-result");
+
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const formData = Object.fromEntries(new FormData(e.target));
+
+        const formData = Object.fromEntries(new FormData(form));
+        resultBox.innerHTML = `<div class="text-muted p-3 text-center">Calculating...</div>`;
+        resultBox.classList.remove("d-none");
 
         try {
             const result = await convertCrypto(formData.from_currency, formData.to_currency, formData.amount);
 
-            const formattedAmount = parseFloat(result.amount).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-            const formattedConvertedAmount = parseFloat(result.converted_amount).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-            const formattedRate = parseFloat(result.conversion_rate).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+            const amount = parseFloat(result.amount).toLocaleString(undefined, { minimumFractionDigits: 4 });
+            const converted = parseFloat(result.converted_amount).toLocaleString(undefined, { minimumFractionDigits: 4 });
+            const rate = parseFloat(result.conversion_rate).toLocaleString(undefined, { minimumFractionDigits: 4 });
 
-            document.getElementById("conversion-result").innerHTML = renderAlert(
-                `<strong>Conversion Result</strong><br>
-                <strong>From:</strong> ${formattedAmount} ${result.from_currency}<br>
-                <strong>To:</strong> ${formattedConvertedAmount} ${result.to_currency}<br>
-                <strong>Conversion Rate (${result.from_currency} to ${result.to_currency}):</strong> ${formattedRate}`,
-                "info"
-            );
+            resultBox.innerHTML = `
+                <div class="card shadow-sm border rounded p-4">
+                    <h4 class="text-center mb-4">${result.from_currency} ➝ ${result.to_currency}</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Amount:</strong> <span>${amount} ${result.from_currency}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Converted:</strong> <span>${converted} ${result.to_currency}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Rate:</strong> <span>1 ${result.from_currency} = ${rate} ${result.to_currency}</span>
+                        </li>
+                    </ul>
+                </div>
+            `;
+
+            form.closest(".conversion-form").classList.add("slide-left");
+            resultBox.classList.add("slide-in");
+
         } catch (err) {
             console.error(err);
-            document.getElementById("conversion-result").innerHTML = renderAlert("Conversion failed ❌", "danger");
+            resultBox.innerHTML = `<div class="alert alert-danger">Conversion failed ❌</div>`;
+        }
+    });
+}
+
+// ==============================
+// APR PAGE
+// ==============================
+function renderAPR() {
+    app.innerHTML = `
+        <div class="container" style="padding-top: 0;">
+            <div class="d-flex flex-column flex-md-row justify-content-center align-items-start gap-4 animated-form-container">
+                <div class="apr-form card p-4 shadow w-100" style="max-width: 480px;">
+                    <form id="apr-form">
+                        <h2 class="form-title mb-4 text-center">APR Calculator</h2>
+                        <div class="mb-3">
+                            <label for="crypto_symbol" class="form-label">Crypto Symbol</label>
+                            <input name="crypto_symbol" class="form-control form-control-lg" placeholder="XRP" required oninput="this.value = this.value.toUpperCase()" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="principal" class="form-label">Principal (in crypto)</label>
+                            <input type="number" name="principal" class="form-control form-control-lg" placeholder="Principal amount" step="any" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="rate" class="form-label">APR (%)</label>
+                            <input type="number" name="rate" class="form-control form-control-lg" placeholder="Annual rate" step="any" required />
+                        </div>
+                        <div class="mb-4">
+                            <label for="time_years" class="form-label">Years</label>
+                            <input type="number" name="time_years" class="form-control form-control-lg" placeholder="Years" step="any" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Calculate</button>
+                    </form>
+                </div>
+                <div id="apr-result" class="apr-result d-none w-100" style="max-width: 500px;"></div>
+            </div>
+        </div>
+    `;
+
+    const form = document.getElementById("apr-form");
+    const resultBox = document.getElementById("apr-result");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        resultBox.innerHTML = `<div class="text-muted p-3 text-center">Calculating...</div>`;
+        resultBox.classList.remove("d-none");
+
+        const formData = Object.fromEntries(new FormData(form));
+        try {
+            const result = await calculateAPR(
+                formData.crypto_symbol,
+                formData.principal,
+                formData.rate,
+                formData.time_years
+            );
+
+            const principalCrypto = parseFloat(result.principal_in_crypto).toLocaleString(undefined, { minimumFractionDigits: 4 });
+            const principalUSD = parseFloat(result.principal_in_usd).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            const rate = parseFloat(result.annual_rate_percent).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            const interest = parseFloat(result.interest_earned_in_crypto).toLocaleString(undefined, { minimumFractionDigits: 4 });
+            const total = parseFloat(result.total_amount_in_crypto).toLocaleString(undefined, { minimumFractionDigits: 4 });
+
+            const years = Math.floor(result.time_years);
+            const months = Math.round((result.time_years - years) * 12);
+            const timeString = `${years ? `${years} year${years > 1 ? 's' : ''}` : ''} ${months ? `${months} month${months > 1 ? 's' : ''}` : ''}`.trim();
+
+            resultBox.innerHTML = `
+                <div class="card shadow-sm border rounded p-4">
+                    <h4 class="text-center mb-4">${result.crypto_symbol.toUpperCase()} APR Results</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Principal (Crypto):</strong> <span>${principalCrypto} ${result.crypto_symbol.toUpperCase()}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Principal (USD):</strong> <span>$${principalUSD}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>APR:</strong> <span>${rate}%</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Time:</strong> <span>${timeString}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Interest Earned:</strong> <span>${interest} ${result.crypto_symbol.toUpperCase()}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <strong>Total Amount:</strong> <span>${total} ${result.crypto_symbol.toUpperCase()}</span>
+                        </li>
+                    </ul>
+                </div>
+            `;
+
+            form.closest(".apr-form").classList.add("slide-left");
+            resultBox.classList.add("slide-in");
+
+        } catch (err) {
+            console.error(err);
+            resultBox.innerHTML = `<div class="alert alert-danger">APR Calculation failed ❌</div>`;
         }
     });
 }
@@ -266,13 +435,36 @@ function renderConvert() {
 // HISTORY PAGE
 // ==============================
 async function renderHistory() {
-    app.innerHTML = `<p>Loading conversion history...</p>`;
+    app.innerHTML = `
+        <div class="container" style="padding-top: 0;">
+            <h2 class="text-center mb-4">Conversion History</h2>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover shadow-sm mx-auto" style="max-width: 95%;">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>From Currency</th>
+                            <th>Amount</th>
+                            <th>To Currency</th>
+                            <th>Converted Amount</th>
+                            <th>Conversion Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="6" class="text-center">Loading history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
 
     try {
         const data = await fetchConversionHistory();
+        const historyTableBody = app.querySelector('.table-responsive tbody');
+        historyTableBody.innerHTML = '';
 
         if (!data || data.length === 0) {
-            app.innerHTML = renderAlert("No conversion history available.", "info");
+            historyTableBody.innerHTML = `<tr><td colspan="6" class="text-center">No conversion history available.</td></tr>`;
             return;
         }
 
@@ -294,102 +486,11 @@ async function renderHistory() {
             `;
         }).join("");
 
-        app.innerHTML = `
-            <h2>Conversion History</h2>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>From Currency</th>
-                            <th>Amount</th>
-                            <th>To Currency</th>
-                            <th>Converted Amount</th>
-                            <th>Conversion Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${formattedHistory}
-                    </tbody>
-                </table>
-            </div>
-        `;
+        historyTableBody.innerHTML = formattedHistory;
+
     } catch (err) {
         console.error(err);
-        app.innerHTML = renderAlert("Failed to load history ❌", "danger");
-    }
-}
-
-// ==============================
-// APR CALCULATOR PAGE
-// ==============================
-function renderAPR() {
-    app.innerHTML = `
-        <h2>APR Calculator</h2>
-        <form id="apr-form">
-            <input name="crypto_symbol" class="form-control mb-2" placeholder="Crypto Symbol (e.g., XRP)" required oninput="this.value = this.value.toUpperCase()" />
-            <input type="number" name="principal" class="form-control mb-2" placeholder="Principal (in crypto)" step="any" required />
-            <input type="number" name="rate" class="form-control mb-2" placeholder="APR (%)" step="any" required />
-            <input type="number" name="time_years" class="form-control mb-2" placeholder="Years" step="any" required />
-            <button class="btn btn-primary">Calculate</button>
-        </form>
-        <div id="apr-result" class="mt-4"></div>
-    `;
-
-    const aprForm = document.getElementById("apr-form");
-    if (aprForm) {
-        aprForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = Object.fromEntries(new FormData(e.target));
-
-            try {
-                const result = await calculateAPR(
-                    formData.crypto_symbol,
-                    formData.principal,
-                    formData.rate,
-                    formData.time_years
-                );
-
-                const formattedPrincipalCrypto = parseFloat(result.principal_in_crypto).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-                const formattedPrincipalUSD = parseFloat(result.principal_in_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                const formattedRate = parseFloat(result.annual_rate_percent).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                const formattedInterest = parseFloat(result.interest_earned_in_crypto).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-                const formattedTotal = parseFloat(result.total_amount_in_crypto).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-
-                const totalYears = parseFloat(result.time_years);
-                const years = Math.floor(totalYears);
-                const remainingMonthsDecimal = (totalYears - years) * 12;
-                const months = Math.round(remainingMonthsDecimal);
-
-                let timeString = '';
-                if (years > 0) {
-                    timeString += `${years} year${years > 1 ? 's' : ''}`;
-                }
-                if (months > 0) {
-                    if (timeString) {
-                        timeString += ' ';
-                    }
-                    timeString += `${months} month${months > 1 ? 's' : ''}`;
-                }
-                if (!timeString) {
-                    timeString = 'Less than a month';
-                }
-
-                document.getElementById("apr-result").innerHTML = renderAlert(
-                    `<strong>${result.crypto_symbol.toUpperCase()} APR Results</strong><br>
-                    <strong>Principal (in crypto):</strong> ${formattedPrincipalCrypto} ${result.crypto_symbol.toUpperCase()}<br>
-                    <strong>Principal (USD):</strong> $${formattedPrincipalUSD}<br>
-                    <strong>Annual Rate (%):</strong> ${formattedRate}%<br>
-                    <strong>Time:</strong> ${timeString}<br>
-                    <strong>Interest Earned:</strong> ${formattedInterest} ${result.crypto_symbol.toUpperCase()}<br>
-                    <strong>Total Amount:</strong> ${formattedTotal} ${result.crypto_symbol.toUpperCase()}`,
-                    "info"
-                );
-            } catch (err) {
-                console.error(err);
-                document.getElementById("apr-result").innerHTML = renderAlert("APR Calculation failed ❌", "danger");
-            }
-        });
+        app.querySelector('.table-responsive tbody').innerHTML = `<tr><td colspan="6" class="text-center">${renderAlert("Failed to load history ❌", "danger")}</td></tr>`;
     }
 }
 

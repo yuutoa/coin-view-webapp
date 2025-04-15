@@ -2,8 +2,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import AuthenticationForm
-from apps.users.forms import CustomUserCreationForm
+from apps.users.forms import CustomUserCreationForm, CustomAuthenticationForm
 from django.contrib.auth import login, get_backends
 from django.conf import settings
 from django.urls import reverse
@@ -89,7 +88,7 @@ def _set_jwt_cookies_and_redirect(request, user):
 
 def login_view(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
+        form = CustomAuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
@@ -98,7 +97,7 @@ def login_view(request):
         else:
             logger.warning(f"Invalid login attempt: {form.errors.as_json()}")
     else:
-        form = AuthenticationForm()
+        form = CustomAuthenticationForm()
     return render(request, 'users/login.html', {'form': form})
 
 
