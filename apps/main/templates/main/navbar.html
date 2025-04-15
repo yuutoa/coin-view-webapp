@@ -1,0 +1,52 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/app/#/crypto-list" data-link>
+            <img src="{% static 'img/logo.png' %}" alt="CoinView Logo" height="30" class="me-2">
+            <span class="brand-name">CoinView</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item me-2">
+                    <span class="navbar-text user-info">
+                        <i class="fas fa-user-circle me-1"></i>
+                        <span>{{ request.user.username }}</span>
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#/crypto-list" data-link>
+                        <i class="fas fa-coins me-1"></i>
+                        <span>Cryptocurrencies</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#/convert" data-link>
+                        <i class="fas fa-exchange-alt me-1"></i>
+                        <span>Converter</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#/apr" data-link>
+                        <i class="fas fa-percentage me-1"></i>
+                        <span>APR</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#/history" data-link>
+                        <i class="fas fa-history me-1"></i>
+                        <span>History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <button class="logout-link" id="logout-button">
+                        <i class="fas fa-sign-out-alt me-1"></i> Logout
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
